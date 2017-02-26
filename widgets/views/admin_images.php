@@ -84,7 +84,6 @@
 						'fileuploaded' => "function(event, data, previewId, index) {
 							    var out = '';
 						        out = out + '<li>' + 'Файл \"' +   data.files[index].name + '\" успешно загружен.' + '</li>';
-						        //$.pjax.defaults.timeout = false;$.pjax.reload({container:'#{'GridViewPjx'.$section_id}_images_area'});
 							    $('#kv-success-2 ul').append(out);
 						}",
 						'filebatchuploadcomplete' => 'function(event, data) {
