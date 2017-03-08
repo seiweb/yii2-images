@@ -272,6 +272,7 @@ class Image extends \yii\db\ActiveRecord
 		$i = new ActiveRecord();
 		$query->andWhere(['model_name'=>$model->className()]);
 		$query->andWhere(['id_object'=>$model->primaryKey]);
+		$query->orderBy('sorter');
 
 		return $query;
 	}

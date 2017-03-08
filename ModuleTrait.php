@@ -13,14 +13,8 @@ use yii\base\Exception;
 
 trait ModuleTrait
 {
-    /**
-     * @var null|\rico\yii2images\Module
-     */
     private $_module;
 
-    /**
-     * @return null|\rico\yii2images\Module
-     */
     protected function getModule()
     {
         if ($this->_module == null) {
