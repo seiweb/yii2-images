@@ -2,6 +2,7 @@
 
 namespace seiweb\yii2images\controllers;
 
+use seiweb\sortable\actions\SortableGridAction;
 use seiweb\yii2images\models\Image;
 use seiweb\yii2images\models\UploadFile;
 use seiweb\yii2images\ModuleTrait;
@@ -15,27 +16,15 @@ use yii\web\UploadedFile;
 
 class DefaultController extends Controller
 {
-	use ModuleTrait;
-
-	public function actionIndex()
-	{
-		$imagesRoot = '@frontend/web/uploads/yii2images/';
-		$originalSubFolder = 'original';
-		$modifiedSubFolder = 'modified';
-
-		\Yii::setAlias('@original', 'original_rp');
-		\Yii::setAlias('@modified', 'modified_rp');
-
-
-		var_dump(\Yii::getAlias($imagesRoot));
-		var_dump(\Yii::getAlias($imagesRoot . '/' . 'original'));
-
-
-		Yii::setAlias('@foo', '/path/to/foo');
-		Yii::setAlias('@foo/bar', '/path2/bar');
-		echo '<br/>' . Yii::getAlias('@foo/test/file.php') . '<br/>';  // выведет: /path/to/foo/test/file.php
-		echo Yii::getAlias('@foo/bar/file.php');   // выведет: /path2/bar/file.php
-	}
+    public function actions()
+    {
+        return [
+            'sort' => [
+                'class' => SortableGridAction::className(),
+                'modelName' => Image::className(),
+            ],
+        ];
+    }
 
 	/**
 	 *
@@ -67,8 +56,7 @@ class DefaultController extends Controller
 				]]
 			];
 
-			echo Json::encode($res);
-			return;
+			return  Json::encode($res);
 		}
 
 		if ($file) {
@@ -89,6 +77,7 @@ class DefaultController extends Controller
 			$image = new Image();
 			$image->file_name = $filename;
 			$image->model_name = $model_name;
+			$image->size = $file->size;
 			$image->model_name_md5 = substr(md5($model_name), 5, 10);
 			$image->id_object = $primaryKey;
 
@@ -104,15 +93,11 @@ class DefaultController extends Controller
 				]]
 			];
 
-			$res = ['result' => 'OK', 'initialPreview' => [
-				//Html::img($image->getUrl(350,150,'crop'))
-			]];
 			return Json::encode($res);
 		}
 
 
-		$res = ['result' => 'OK', 'initialPreview' => [
-		]];
+		$res = ['result' => 'FALSE', 'error' => 'Some error blyat'];
 		return Json::encode($res);
 
 	}
@@ -120,43 +105,29 @@ class DefaultController extends Controller
 
 	public function actionSetAsMain($id)
 	{
-		$current = Image::findOne($id);
-		$connection = \Yii::$app->db;
-		$connection->createCommand()->update('tbl_image', ['is_main' => 0], ['model_name' => $current->model_name, 'id_object' => $current->id_object])->execute();
-		$current->is_main = 1;
-		$current->save();
+	    $img = Image::findOne($id);
+	    //$items = Image::find()->where(['model_name'=>$img->model_name,'id_object'=>$img->id_object])->select('id')->column();
 
-		echo Json::encode(['result' => 'ok', 'item_id' => $current->primaryKey]);
+	    $img->sorter = 0;
+	    $img->save();
+
+	    Yii::$app->db->createCommand("update tbl_image set sorter= (select @a:= @a+1 from (select @a:=0) s) where model_name_md5='{$img->model_name_md5}' and id_object={$img->id_object} order by sorter")->execute();
+
+	    //Yii::trace($items);
+
+	    //из поведения
+        //$img->gridSort($items);
+		return Json::encode(['result' => 'ok']);
 	}
 
 	public function actionDelete($id)
 	{
 
+	    Yii::trace($id);
+
 		$res = [];
 		$current = Image::findOne($id);
 
-		//is_main?
-		if ($current->is_main > 0) {
-			$next_main = Image::findOne(['model_name_md5' => $current->model_name_md5, 'id_object' => $current->id_object, 'is_main' => 0]);
-			if ($next_main != null) {
-				$next_main->is_main = 1;
-				$next_main->save();
-				$res['new_main_id'] = $next_main->id;
-			}
-		}
-
-		/*
-				$storePath = $current->getOriginalPath();
-
-				$fileToRemove = $storePath . DIRECTORY_SEPARATOR . $current->file_name;
-				if (preg_match('@\.@', $fileToRemove) and is_file($fileToRemove)) {
-					unlink($fileToRemove);
-				}
-
-				$subDir = $current->getCachePath();
-
-				array_map("unlink", glob($subDir.'/*'.$current->file_name.'*'));
-		*/
 		$current->delete();
 
 		$res['result'] = 'ok';

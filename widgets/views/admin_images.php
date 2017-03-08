@@ -1,116 +1,90 @@
-<div class="box">
-	<div class="box-header with-border">
-		<h3 class="box-title">Изображения</h3>
+<?php
 
-		<div class="box-tools pull-right">
-			<button type="button" class="btn btn-box-tool" data-widget="collapse"><i class="fa fa-minus"></i>
-			</button>
-			<div class="btn-group">
-				<button type="button" class="btn btn-box-tool dropdown-toggle" data-toggle="dropdown">
-					<i class="fa fa-wrench"></i></button>
-				<ul class="dropdown-menu" role="menu">
-					<li><a id="delete_all_images" href="#">Удалить все изображения</a></li>
-					<li><a href="#">Another action</a></li>
-					<li><a href="#">Something else here</a></li>
-					<li class="divider"></li>
-					<li><a href="#">Separated link</a></li>
-				</ul>
-			</div>
-			<button type="button" class="btn btn-box-tool" data-widget="remove"><i class="fa fa-times"></i></button>
-		</div>
-	</div>
-	<!-- /.box-header -->
-	<div class="box-body">
-		<div class="row">
-			<div class="col-md-12">
-				<?php
+use kartik\widgets\FileInput;
 
+$widgetId = $this->context->getId();
 
-				use kartik\file\FileInput;
+$filesorted = <<<EOD
+function(event, params) {
+    var items = params.stack.map(function(item) {
+        return item.key;
+        }); 
+    
+    $.post($(this).data('sortable-url'), {
+       sorting: items
+    });
+}
 
-				yii\widgets\Pjax::begin(['id' => $this->context->getId() . '_images_area']);
-				echo \seiweb\yii2images\widgets\AdminImagesListWidget::widget([
-					'model' => $model
-				]);
-				yii\widgets\Pjax::end();
+EOD;
 
-				?>
+$this->registerJs("
+ $(document).on('click', '.kv-image-main', function(e){
 
-			</div>
-			<!-- /.col -->
-		</div>
-		<!-- /.row -->
-	</div>
-	<!-- ./box-body -->
-	<div class="box-footer">
-		<div class="row">
-			<div class="col-md-12">
+        e.preventDefault();
+        var id = $(this).data('key');
+        var url = $(this).data('url');
+        var widget = $(this).data('widget');
+        
+        $.ajax({
+            url: url+'?id='+id,
+            type: 'get',
+            success: function(result) {
+                    
+                       var files = $('#'+widget).fileinput.stack;
+                       console.log(files);
+                    }
+        });
+    });
+");
 
-				<?php
+echo FileInput::widget([
+    'model' => new \seiweb\yii2images\models\UploadFile(),
+    'attribute' => 'file',
 
-				echo FileInput::widget([
-					'model' =>new \seiweb\yii2images\models\UploadFile(),
-					'attribute' => 'file',
+    'language' => 'ru',
+    'options' => [
+        'multiple' => true,
+        'accept' => '*/*',
+        'id' => $widgetId,
+        'data-sortable-url'=>\yii\helpers\Url::to(['/yii2images/default/sort']),
+    ],
+    'pluginOptions' => [
+        'initialPreview' => $initialPreview,
+        'initialPreviewAsData' => true,
+        'initialPreviewConfig' => $initialPreviewConfig,
 
-					'language' => 'ru',
-					'options' => [
-						'multiple' => true,
-						'accept' => '*/*',
-						'id' => 'FileInput' . $this->context->getId(),
-					],
-					'pluginOptions' => [
-						'previewFileType' => 'any',
-						'uploadUrl' =>\yii\helpers\Url::to(['/yii2images/default/upload']),
+        '1layoutTemplates' => [
+            'actions' => '<div class="file-actions">' .
+                '    <div class="file-footer-buttons">' .
+                '        {upload} {delete} {test}' .
+                '    </div>' .
+                '    {drag}' .
+                '    <div class="clearfix"></div>' .
+                '</div>',
+        ],
 
-						'uploadExtraData' => [
-							'model_name' => $model::className(),
-							'primaryKey' => $model->primaryKey
-						],
+        'otherActionButtons' =>
+            "<button type='button' class='kv-image-main btn btn-xs btn-default' title='Сделать главной' data-url='/admin/yii2images/default/set-as-main' {dataKey} data-widget='{$widgetId}'><i class='glyphicon glyphicon-home text-primary'></i></button>"
+        ,
 
-						'showPreview' => false,
-						'uploadAsync' => true,
-						'showUpload' => false,
-						'showCaption' => false,
-						'showRemove' => false,
-						'showCancel'=>false,
-						'browseClass' => 'btn btn-primary btn-block',
-						'browseIcon' => '<i class="glyphicon glyphicon-camera"></i> ',
-						'browseLabel' => 'Выберите файлы',
-						'maxFileSize' => 1024 * 15,
-						'elErrorContainer' => '#kv-error-2',
-					],
-					'pluginEvents' => [
-						'filebatchselected' => "function(e) { $(this).fileinput('upload');}",
-						'fileuploaded' => "function(event, data, previewId, index) {
-							    var out = '';
-						        out = out + '<li>' + 'Файл \"' +   data.files[index].name + '\" успешно загружен.' + '</li>';
-							    $('#kv-success-2 ul').append(out);
-						}",
-						'filebatchuploadcomplete' => 'function(event, data) {
-							$.pjax.defaults.timeout = false;//IMPORTANT
-							$.pjax.reload({container:"#' . $this->context->getId() . '_images_area'. '"});
-							}
-						',
-					]
-
-				]);
+        'previewSettings' => [
+            'image' => ['width' => '195px', 'height' => 'auto']
+        ],
 
 
-				?>
+        'overwriteInitial' => false,
+        'uploadUrl' => \yii\helpers\Url::to(['/yii2images/default/upload']),
+        'uploadExtraData' => [
+            'model_name' => $model::className(),
+            'primaryKey' => $model->primaryKey
+        ],
+        'dragSettings' => [
+            'animation' => 500,
+        ],
+    ],
+    'pluginEvents' => [
+        'filesorted' => new \yii\web\JsExpression($filesorted),
+    ]
+]);
 
-
-
-
-				<div id="kv-success-2" style="margin-top:10px;">
-					<ul></ul>
-				</div>
-				<div id="kv-error-2" style="margin-top:10px;">
-					<ul></ul>
-				</div>
-
-			</div>
-		</div>
-		<!-- /.row -->
-	</div>
-	<!-- /.box-footer -->
-</div>
+?>

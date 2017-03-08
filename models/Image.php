@@ -2,6 +2,7 @@
 
 namespace seiweb\yii2images\models;
 
+use seiweb\sortable\behaviors\SortableGridBehavior;
 use seiweb\yii2images\ModuleTrait;
 use Yii;
 use yii\base\Exception;
@@ -27,8 +28,16 @@ use yii\image\ImageDriver;
  */
 class Image extends \yii\db\ActiveRecord
 {
-	use ModuleTrait;
-
+    public function behaviors()
+    {
+        return [
+            'sort' => [
+                'class' => SortableGridBehavior::className(),
+                'sortableAttribute' => 'sorter',
+                'scopeAttribute'=>['id_object','model_name']
+            ],
+        ];
+    }
 
 	/**
 	 * @inheritdoc
@@ -205,7 +214,7 @@ class Image extends \yii\db\ActiveRecord
 	{
 		return [
 			[['id_object', 'file_name', 'is_main', 'model_name', 'model_name_md5'], 'required'],
-			[['id_object', 'sorter', 'is_main'], 'integer'],
+			[['id_object', 'sorter', 'is_main','size'], 'integer'],
 			[['file_name', 'comment'], 'string', 'max' => 255],
 			[['model_name'], 'string', 'max' => 200]
 		];

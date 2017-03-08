@@ -16,7 +16,7 @@ trait ModelTrait
 	public function getMainImage()
 	{
 		return $this->hasOne(Image::className(), ['id_object' => 'id'])
-			->where(Image::tableName() . '.model_name=:m_name', [':m_name' => $this->className()])->andWhere(Image::tableName() . '.is_main=1');
+			->where(Image::tableName() . '.model_name=:m_name', [':m_name' => $this->className()])->orderBy('sort')->limit(1);
 	}
 
 	public function getImages()
