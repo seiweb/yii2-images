@@ -28,6 +28,8 @@ use yii\image\ImageDriver;
  */
 class Image extends \yii\db\ActiveRecord
 {
+	use ModuleTrait;
+
     public function behaviors()
     {
         return [

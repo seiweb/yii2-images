@@ -15,6 +15,8 @@ use yii\base\Widget;
 
 class AdminImagesWidget extends Widget
 {
+    use ModuleTrait;
+
     public $model = null;
 
     public function init()

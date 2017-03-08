@@ -16,6 +16,8 @@ use yii\web\UploadedFile;
 
 class DefaultController extends Controller
 {
+	use ModuleTrait;
+
     public function actions()
     {
         return [
